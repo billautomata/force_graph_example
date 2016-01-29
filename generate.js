@@ -5,15 +5,27 @@ var width = window.innerWidth,
 var color = d3.scale.category20();
 
 var force = d3.layout.force()
-    .charge(-100)
-    .linkDistance(10)
+    .charge(-400)
+    .linkStrength(1)
+    .linkDistance(function(d){
+      console.log(d.value)
+      if(d.value <= 4){
+        return 100 + ((6 - d.value)*10)
+      } else {
+        console.log('here')
+        return (6 - d.value)
+      }
+
+    })
+    .gravity(0.1)
+    .alpha(0.1)
     .size([width, height]);
 
 var svg = d3.select('body').append('svg')
     .attr('width', '100%')
     .attr('height', '100%')
-    // .attr('preserveAspectRatio', 'xMidYMid')
-    .attr('viewBox', '0 0 ' + width + ' ' + height )
+    .attr('preserveAspectRatio', 'xMidYMid')
+    .attr('viewBox', '0 0 ' + (width) + ' ' + (height) )
     .style('background-color', 'rgba(0,0,0,0.1)')
 
 
@@ -31,7 +43,7 @@ function g(){
   // generate instance
   // generate volume
 
-  var regions = [ 'us_east_1', 'us_west_1' ]
+  var regions = [ 'us_east_1' ]
 
   regions.forEach(function(region_name){
     var current_region_index = a.nodes.length
@@ -49,28 +61,28 @@ function g(){
       for(var j = 0; j < n_subnets; j++){
         var current_subnet_index = a.nodes.length
         a.nodes.push({ name: 'subnet-'+rand_string(10), type: 'subnet', group: 2 })
-        a.links.push({ source: current_subnet_index, target: current_vpc_index, value: 1 })
+        a.links.push({ source: current_subnet_index, target: current_vpc_index, value: 2 })
 
         // generate security groups
         var n_sgs = 1 + (Math.random() * 1)
         for(var k = 0; k < n_sgs; k++){
           var current_sg_index = a.nodes.length
           a.nodes.push({ name: 'sg-'+rand_string(10), type: 'sg', group: 3 })
-          a.links.push({ source: current_sg_index, target: current_subnet_index, value: 1 })
+          a.links.push({ source: current_sg_index, target: current_subnet_index, value: 3 })
 
           // generate instances
           var n_instances = 1 + (Math.random() * 1)
           for(var l = 0; l < n_instances; l++){
             var current_instance_index = a.nodes.length
             a.nodes.push({ name: 'i-'+rand_string(10), type: 'instance', group: 4 })
-            a.links.push({ source: current_instance_index, target: current_sg_index, value: 1 })
+            a.links.push({ source: current_instance_index, target: current_sg_index, value: 4 })
 
-            // generate volumes
+            // // generate volumes
             var n_volumes = 1 + (Math.random() * 3)
             for(var m = 0; m < n_volumes; m++){
               var current_volume_index = a.nodes.length
               a.nodes.push({ name: 'vol-'+rand_string(10), type: 'volume', group: 5 })
-              a.links.push({ source: current_volume_index, target: current_instance_index, value: 1 })
+              a.links.push({ source: current_volume_index, target: current_instance_index, value: 5 })
             }
 
           }
@@ -131,7 +143,8 @@ console.log(graph)
           .attr('fill', 'black')
           .attr('stroke', 'none')
           .style('font-family', 'monospace')
-          .style('font-size', function(d){ return (10-d.group)})
+          .style('font-size', function(d){ return (15-d.group)})
+          .style('pointer-events', 'none')
 
 
   // node.append('title')
@@ -149,3 +162,11 @@ console.log(graph)
     text_nodes.attr('x', function(d) { return d.x; })
         .attr('y', function(d) { return d.y; });
   });
+
+  var cooled = false
+  force.on('end', function(){
+    if(!cooled){
+      cooled = true
+      force.alpha(0.99)
+    }
+  })
